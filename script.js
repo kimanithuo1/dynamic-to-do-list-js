@@ -1,16 +1,24 @@
 document.addEventListener('DOMContentLoaded', function () {
-    // Select the DOM elements
+    // Select DOM elements
     const addButton = document.getElementById('add-task-btn');
     const taskInput = document.getElementById('task-input');
     const taskList = document.getElementById('task-list');
 
-    // Function to add a new task
-    function addTask() {
-        // Retrieve and trim the value from the input
-        const taskText = taskInput.value.trim();
+    // Load tasks from Local Storage when the page loads
+    function loadTasks() {
+        const storedTasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+        storedTasks.forEach(taskText => addTask(taskText, false));  // Add tasks without saving to avoid duplication
+    }
 
-        // Check if the input is empty
-        if (taskText === "") {
+    // Function to save tasks to Local Storage
+    function saveTasks(tasks) {
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
+
+    // Function to add a task to the list and optionally save it to Local Storage
+    function addTask(taskText, save = true) {
+        // If taskText is empty, alert the user and return
+        if (!taskText.trim()) {
             alert("Please enter a task.");
             return;
         }
@@ -19,33 +27,53 @@ document.addEventListener('DOMContentLoaded', function () {
         const taskItem = document.createElement('li');
         taskItem.textContent = taskText;
 
-        // Create a remove button
+        // Create a remove button for the task
         const removeButton = document.createElement('button');
         removeButton.textContent = "Remove";
         removeButton.classList.add('remove-btn');
 
-        // Add the event listener to remove the task when the button is clicked
+        // Add an event listener to remove the task from the DOM and Local Storage
         removeButton.addEventListener('click', function () {
             taskList.removeChild(taskItem);
+            removeTaskFromLocalStorage(taskText); // Remove from Local Storage
         });
 
-        // Append the remove button to the task item (li)
+        // Append the remove button to the task item and the task item to the task list
         taskItem.appendChild(removeButton);
-
-        // Append the task item (li) to the task list (ul)
         taskList.appendChild(taskItem);
 
-        // Clear the input field after adding the task
+        // Clear the task input field
         taskInput.value = '';
+
+        // If save is true, update Local Storage
+        if (save) {
+            const storedTasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+            storedTasks.push(taskText);
+            saveTasks(storedTasks); // Save the updated tasks array to Local Storage
+        }
     }
 
-    // Event listener for adding a task when the button is clicked
-    addButton.addEventListener('click', addTask);
+    // Function to remove a task from Local Storage
+    function removeTaskFromLocalStorage(taskText) {
+        let storedTasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+        storedTasks = storedTasks.filter(task => task !== taskText); // Filter out the task to be removed
+        saveTasks(storedTasks); // Save the updated tasks array
+    }
 
-    // Event listener for adding a task when the "Enter" key is pressed
+    // Event listener for adding a task when the Add Task button is clicked
+    addButton.addEventListener('click', function () {
+        const taskText = taskInput.value.trim();
+        addTask(taskText);  // Add task and save it to Local Storage
+    });
+
+    // Event listener for adding a task when the Enter key is pressed in the input field
     taskInput.addEventListener('keypress', function (event) {
         if (event.key === 'Enter') {
-            addTask();
+            const taskText = taskInput.value.trim();
+            addTask(taskText);  // Add task and save it to Local Storage
         }
     });
+
+    // Load tasks from Local Storage when the page loads
+    loadTasks();
 });
